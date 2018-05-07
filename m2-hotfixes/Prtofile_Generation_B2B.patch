@@ -1,0 +1,79 @@
+diff --git a/setup/src/Magento/Setup/Fixtures/OrdersFixture.php b/setup/src/Magento/Setup/Fixtures/OrdersFixture.php
+index 1acad6dbc17..25ea94b8a0c 100644
+--- a/setup/src/Magento/Setup/Fixtures/OrdersFixture.php
++++ b/setup/src/Magento/Setup/Fixtures/OrdersFixture.php
+@@ -583,7 +583,6 @@ class OrdersFixture extends Fixture
+         // "Big%" should be replaced with a configurable value.
+         if ($typeId === self::BIG_CONFIGURABLE_TYPE) {
+             $productCollection->getSelect()->where(" type_id = '" . Configurable::TYPE_CODE . "' ");
+-            $productCollection->getSelect()->where(" sku LIKE 'Big%' ");
+         } else {
+             $productCollection->getSelect()->where(" type_id = '$typeId' ");
+             $productCollection->getSelect()->where(" sku NOT LIKE 'Big%' ");
+diff --git a/setup/src/Magento/Setup/Model/FixtureGenerator/CustomerTemplateGenerator.php b/setup/src/Magento/Setup/Model/FixtureGenerator/CustomerTemplateGenerator.php
+index 5c43950d49b..054c7bf8d0c 100644
+--- a/setup/src/Magento/Setup/Model/FixtureGenerator/CustomerTemplateGenerator.php
++++ b/setup/src/Magento/Setup/Model/FixtureGenerator/CustomerTemplateGenerator.php
+@@ -10,6 +10,7 @@ use Magento\Customer\Model\Address;
+ use Magento\Customer\Model\AddressFactory;
+ use Magento\Customer\Model\Customer;
+ use Magento\Customer\Model\CustomerFactory;
++use Magento\Directory\Model\ResourceModel\Region\CollectionFactory;
+ use Magento\Store\Model\StoreManagerInterface;
+
+ /**
+@@ -32,19 +33,27 @@ class CustomerTemplateGenerator implements TemplateEntityGeneratorInterface
+      */
+     private $storeManager;
+
++    /**
++     * @var CollectionFactory
++     */
++    private $regionsCollectionFactory;
++
+     /**
+      * @param CustomerFactory $customerFactory
+      * @param AddressFactory $addressFactory
+      * @param StoreManagerInterface $storeManager
++     * @param CollectionFactory $regionsCollectionFactory
+      */
+     public function __construct(
+         CustomerFactory $customerFactory,
+         AddressFactory $addressFactory,
+-        StoreManagerInterface $storeManager
++        StoreManagerInterface $storeManager,
++        CollectionFactory $regionsCollectionFactory
+     ) {
+         $this->customerFactory = $customerFactory;
+         $this->addressFactory = $addressFactory;
+         $this->storeManager = $storeManager;
++        $this->regionsCollectionFactory = $regionsCollectionFactory;
+     }
+
+     /**
+@@ -105,6 +114,11 @@ class CustomerTemplateGenerator implements TemplateEntityGeneratorInterface
+      */
+     private function getAddressTemplate($customerId)
+     {
++
++        $regionsCollection = $this->regionsCollectionFactory->create();
++        $regionsCollection->unshiftOrder('region_id', 'ASC');
++        $region = $regionsCollection->getFirstItem();
++
+         return $this->addressFactory->create([
+             'data' => [
+                 'parent_id' => $customerId,
+@@ -117,11 +131,11 @@ class CustomerTemplateGenerator implements TemplateEntityGeneratorInterface
+                 'street' => 'Green str, 67',
+                 'lastname' => 'Smith',
+                 'firstname' => 'John',
+-                'region_id' => 1,
++                'region_id' => $region->getId(),
+                 'fax' => '04040404',
+                 'middlename' => '',
+                 'prefix' => '',
+-                'region' => 'Arkansas',
++                'region' => $region->getCode(),
+                 'suffix' => '',
+                 'vat_id' => '',
+                 'default_billing_' => '1',
