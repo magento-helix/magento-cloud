@@ -77,3 +77,20 @@ index 5c43950d49b..054c7bf8d0c 100644
                  'suffix' => '',
                  'vat_id' => '',
                  'default_billing_' => '1',
+diff --git a/setup/performance-toolkit/profiles/b2b/medium.xml b/setup/performance-toolkit/profiles/b2b/medium.xml
+index d145165c4..77845a09f 100644
+--- a/setup/performance-toolkit/profiles/b2b/medium.xml
++++ b/setup/performance-toolkit/profiles/b2b/medium.xml
+@@ -27,12 +27,6 @@
+                 <sku>Configurable Product %s</sku>
+                 <products>250</products>
+             </config>
+-            <config>
+-                <attributes>1</attributes>
+-                <options>200</options>
+-                <sku>Configurable Product big %s</sku>
+-                <products>4</products>
+-            </config>
+         </configurable_products>
+         <product-images>
+             <images-count>1000</images-count>
