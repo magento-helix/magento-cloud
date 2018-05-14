@@ -77,16 +77,117 @@ index 5c43950d49b..054c7bf8d0c 100644
                  'suffix' => '',
                  'vat_id' => '',
                  'default_billing_' => '1',
-diff --git a/setup/src/Magento/Setup/Model/FixtureGenerator/ConfigurableProductGenerator.php b/setup/src/Magento/Setup/Model/FixtureGenerator/ConfigurableProductGenerator.php
-index 61a90352772..2bd573a119e 100644
---- a/setup/src/Magento/Setup/Model/FixtureGenerator/ConfigurableProductGenerator.php
-+++ b/setup/src/Magento/Setup/Model/FixtureGenerator/ConfigurableProductGenerator.php
-@@ -56,7 +56,7 @@ class ConfigurableProductGenerator
-         $this->productGeneratorFactory->create([
-             'customTableMap' => [
-                 'catalog_product_super_attribute_label' => [
--                    'entity_id_field' => EntityGenerator::SKIP_ENTITY_ID_BINDING,
-+                    'entity_id_field' => 'entity_id',
-                     'handler' => function ($productId, $entityNumber, $fixture, $binds) {
-                         foreach ($binds as &$bind) {
-                             $bind['product_super_attribute_id'] = $this->generateSuperAttributeId(
+diff --git a/vendor/magento/module-cron/Observer/ProcessCronQueueObserver.php b/vendor/magento/module-cron/Observer/ProcessCronQueueObserver.php
+index 6b0c405167a..9a194476a42 100644
+--- a/app/code/Magento/Cron/Observer/ProcessCronQueueObserver.php
++++ b/app/code/Magento/Cron/Observer/ProcessCronQueueObserver.php
+@@ -13,6 +13,7 @@ use Magento\Framework\App\State;
+ use Magento\Framework\Console\Cli;
+ use Magento\Framework\Event\ObserverInterface;
+ use \Magento\Cron\Model\Schedule;
++use Magento\Framework\App\MaintenanceMode;
+
+ /**
+  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
+@@ -126,6 +127,11 @@ class ProcessCronQueueObserver implements ObserverInterface
+      */
+     private $jobs;
+
++    /**
++     * @var MaintenanceMode
++     */
++    private $maintenanceMode;
++
+     /**
+      * @param \Magento\Framework\ObjectManagerInterface $objectManager
+      * @param \Magento\Cron\Model\ScheduleFactory $scheduleFactory
+@@ -138,6 +144,7 @@ class ProcessCronQueueObserver implements ObserverInterface
+      * @param \Magento\Framework\Process\PhpExecutableFinderFactory $phpExecutableFinderFactory
+      * @param \Psr\Log\LoggerInterface $logger
+      * @param \Magento\Framework\App\State $state
++     * @param MaintenanceMode $maintenanceMode
+      * @SuppressWarnings(PHPMD.ExcessiveParameterList)
+      */
+     public function __construct(
+@@ -151,7 +158,8 @@ class ProcessCronQueueObserver implements ObserverInterface
+         \Magento\Framework\Stdlib\DateTime\DateTime $dateTime,
+         \Magento\Framework\Process\PhpExecutableFinderFactory $phpExecutableFinderFactory,
+         \Psr\Log\LoggerInterface $logger,
+-        \Magento\Framework\App\State $state
++        \Magento\Framework\App\State $state,
++        MaintenanceMode $maintenanceMode = null
+     ) {
+         $this->_objectManager = $objectManager;
+         $this->_scheduleFactory = $scheduleFactory;
+@@ -164,6 +172,7 @@ class ProcessCronQueueObserver implements ObserverInterface
+         $this->phpExecutableFinder = $phpExecutableFinderFactory->create();
+         $this->logger = $logger;
+         $this->state = $state;
++        $this->maintenanceMode = $maintenanceMode ?: $objectManager->get(MaintenanceMode::class);
+     }
+
+     /**
+@@ -186,8 +195,10 @@ class ProcessCronQueueObserver implements ObserverInterface
+         $phpPath = $this->phpExecutableFinder->find() ?: 'php';
+
+         foreach ($jobGroupsRoot as $groupId => $jobsRoot) {
+-            $this->_cleanup($groupId);
+-            $this->_generate($groupId);
++            if (!$this->maintenanceMode->isOn()) {
++                $this->_cleanup($groupId);
++                $this->_generate($groupId);
++            }
+             if ($this->_request->getParam('group') !== null
+                 && $this->_request->getParam('group') !== '\'' . ($groupId) . '\''
+                 && $this->_request->getParam('group') !== $groupId
+@@ -218,6 +229,19 @@ class ProcessCronQueueObserver implements ObserverInterface
+                     continue;
+                 }
+
++                if ($this->maintenanceMode->isOn()) {
++
++                    $newScheduledTime = $currentTime + max(
++                            static::SECONDS_IN_MINUTE,
++                            $this->getScheduleLifeTime($groupId)
++                        );
++
++                    $schedule->setScheduledAt(strftime('%Y-%m-%d %H:%M:%S', $newScheduledTime));
++                    $schedule->getResource()->save($schedule);
++
++                    continue;
++                }
++
+                 $scheduledTime = strtotime($schedule->getScheduledAt());
+                 if ($scheduledTime > $currentTime) {
+                     continue;
+@@ -263,11 +287,7 @@ class ProcessCronQueueObserver implements ObserverInterface
+      */
+     protected function _runJob($scheduledTime, $currentTime, $jobConfig, $schedule, $groupId)
+     {
+-        $scheduleLifetime = (int)$this->_scopeConfig->getValue(
+-            'system/cron/' . $groupId . '/' . self::XML_PATH_SCHEDULE_LIFETIME,
+-            \Magento\Store\Model\ScopeInterface::SCOPE_STORE
+-        );
+-        $scheduleLifetime = $scheduleLifetime * self::SECONDS_IN_MINUTE;
++        $scheduleLifetime = $this->getScheduleLifeTime($groupId);
+         if ($scheduledTime < $currentTime - $scheduleLifetime) {
+             $schedule->setStatus(Schedule::STATUS_MISSED);
+             throw new \Exception('Too late for the schedule');
+@@ -308,6 +328,16 @@ class ProcessCronQueueObserver implements ObserverInterface
+         ));
+     }
+
++    private function getScheduleLifeTime($groupId)
++    {
++        $scheduleLifetime = (int)$this->_scopeConfig->getValue(
++            'system/cron/' . $groupId . '/' . self::XML_PATH_SCHEDULE_LIFETIME,
++            \Magento\Store\Model\ScopeInterface::SCOPE_STORE
++        );
++
++        return $scheduleLifetime * self::SECONDS_IN_MINUTE;
++    }
++
+     /**
+      * Return job collection from data base with status 'pending'
+      *
+
