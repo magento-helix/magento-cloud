@@ -77,20 +77,16 @@ index 5c43950d49b..054c7bf8d0c 100644
                  'suffix' => '',
                  'vat_id' => '',
                  'default_billing_' => '1',
-diff --git a/setup/performance-toolkit/profiles/b2b/medium.xml b/setup/performance-toolkit/profiles/b2b/medium.xml
-index d145165c4..77845a09f 100644
---- a/setup/performance-toolkit/profiles/b2b/medium.xml
-+++ b/setup/performance-toolkit/profiles/b2b/medium.xml
-@@ -27,12 +27,6 @@
-                 <sku>Configurable Product %s</sku>
-                 <products>250</products>
-             </config>
--            <config>
--                <attributes>1</attributes>
--                <options>200</options>
--                <sku>Configurable Product big %s</sku>
--                <products>4</products>
--            </config>
-         </configurable_products>
-         <product-images>
-             <images-count>1000</images-count>
+diff --git a/setup/src/Magento/Setup/Model/FixtureGenerator/ConfigurableProductGenerator.php b/setup/src/Magento/Setup/Model/FixtureGenerator/ConfigurableProductGenerator.php
+index 61a90352772..2bd573a119e 100644
+--- a/setup/src/Magento/Setup/Model/FixtureGenerator/ConfigurableProductGenerator.php
++++ b/setup/src/Magento/Setup/Model/FixtureGenerator/ConfigurableProductGenerator.php
+@@ -56,7 +56,7 @@ class ConfigurableProductGenerator
+         $this->productGeneratorFactory->create([
+             'customTableMap' => [
+                 'catalog_product_super_attribute_label' => [
+-                    'entity_id_field' => EntityGenerator::SKIP_ENTITY_ID_BINDING,
++                    'entity_id_field' => 'entity_id',
+                     'handler' => function ($productId, $entityNumber, $fixture, $binds) {
+                         foreach ($binds as &$bind) {
+                             $bind['product_super_attribute_id'] = $this->generateSuperAttributeId(
