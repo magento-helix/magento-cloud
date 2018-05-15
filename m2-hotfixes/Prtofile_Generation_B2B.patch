@@ -79,8 +79,8 @@ index 5c43950d49b..054c7bf8d0c 100644
                  'default_billing_' => '1',
 diff --git a/vendor/magento/module-cron/Observer/ProcessCronQueueObserver.php b/vendor/magento/module-cron/Observer/ProcessCronQueueObserver.php
 index 6b0c405167a..9a194476a42 100644
---- a/app/code/Magento/Cron/Observer/ProcessCronQueueObserver.php
-+++ b/app/code/Magento/Cron/Observer/ProcessCronQueueObserver.php
+--- a/vendor/magento/module-cron/Observer/ProcessCronQueueObserver.php
++++ b/vendor/magento/module-cron/Observer/ProcessCronQueueObserver.php
 @@ -13,6 +13,7 @@ use Magento\Framework\App\State;
  use Magento\Framework\Console\Cli;
  use Magento\Framework\Event\ObserverInterface;
