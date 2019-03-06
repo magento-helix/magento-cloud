@@ -2,7 +2,7 @@
     "name": "magento/project-enterprise-edition",
     "description": "eCommerce Platform for Growth (Enterprise Edition)",
     "type": "project",
-    "version": "2.3.1-alpha15",
+    "version": "2.3.1-alpha16",
     "license": [
         "OSL-3.0",
         "AFL-3.0"
@@ -18,7 +18,7 @@
         }
     },
     "require": {
-        "magento/magento-cloud-metapackage": "2.3.1-alpha15"
+        "magento/magento-cloud-metapackage": "2.3.1-alpha16"
     },
     "suggest": {
         "ext-pcntl": "Need for run processes in parallel mode"
@@ -57,7 +57,6 @@
         }
     },
     "minimum-stability": "alpha",
-    "prefer-stable": true,
     "extra": {
         "component_paths": {
             "trentrichardson/jquery-timepicker-addon": "lib/web/jquery/jquery-ui-timepicker-addon.js",
